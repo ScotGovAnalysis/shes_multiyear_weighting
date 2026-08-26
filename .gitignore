@@ -3,8 +3,9 @@
 .RData
 .Ruserdata
 
-# Re-include files containing "config"
+# Include files containing "config" or "calibration_totals"
 *config*
+*calibration_totals*
  
 # Except config_example
 !config_example
