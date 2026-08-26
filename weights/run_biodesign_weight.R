@@ -1,0 +1,128 @@
+# ==========================================================
+# Bio design interview weight
+# ==========================================================
+
+run_biodesign_weight <- function(years){
+  
+  # Specify inputs ---------------------
+  
+  pop_total <- config$household_pop
+  input <- config$input_files$biodesign
+  wt_name <- 'hh2'
+  name <- 'Bio design'
+  totals_input <- config$totals_files$household
+  
+  message(paste("Running", tolower(name), "weight:", paste(years, collapse = ", ")))
+  
+  # Prepare data ---------------------------------------------------
+  
+  message("Import data")
+  
+  output_folder <- build_output_folder(years)
+  
+  files <- get_files_for_years(input, years)
+  
+  df <- prepare_weight_data(
+    files = files,
+    years = years,
+    weight_var = "preweight",
+    population_vector = pop_total,
+    indicator_value = "noftot"
+  )
+  
+  n <- nrow(df)
+  
+  # Load calibration totals -------------------------
+  
+  totals <- create_calibration_totals(
+    totals_file = totals_input,
+    data = df,
+    population_vector = pop_total,
+    ref_year = max(years)
+  )
+  
+  # Calibration formula ---------------------------------------------------
+  
+  model <- build_calibration_formula(
+    years,
+    c(
+      paste0("total",1:14),
+      paste0("m",1:10),
+      paste0("f",1:10),
+      paste0(
+        "simdq",
+        1:5,
+        "tot"
+      )
+    )
+  )
+  
+  # Calibration ---------------------------------------------------
+  
+  message("Calibration")
+  
+  result <- run_calibration(
+    data = df,
+    totals = totals,
+    ids = ~serial_n,
+    model = model,
+    bounds = c(-2.5, 2.5),
+    weight_name = paste0("SHeS_", wt_name, "_wt"),
+    scaled_weight_name = paste0("SHeS_", wt_name, "_wt_sc"),
+    population_total = pop_total[[as.character(max(years))]]
+  )
+  
+  # QA ---------------------------------------------------
+  
+  message('Checking')
+  
+  check <- distribution_check(result$data, !!paste0("SHeS_", wt_name, "_wt"))
+  
+  if(abs(check$count - n) > 1e-8){
+    stop(paste(wt_name,"record count failed")
+    )
+    
+  } else {
+    print(paste("Number of", wt_name, "observations correct, continuing..."))
+  }
+  
+  # Large weights
+  large_wts <- extract_large_weights(
+    result$data,
+    paste0("SHeS_", wt_name, "_wt")
+  )
+  
+  # Export ---------------------------------------------------
+  
+  message("Export")
+  
+  export_weights(
+    data = result$data %>%
+      select(
+        serial_n,
+        preweight1,
+        year,
+        starts_with(paste0("SHeS_", wt_name))
+      ),
+    output_folder = output_folder,
+    filename = paste0("SHeS", wt_name, ".csv")
+  )
+  
+  export_weights(
+    data = large_wts %>%
+      select(
+        serial_n,
+        preweight1,
+        year,
+        starts_with(paste0("SHeS_", wt_name))
+      ),
+    output_folder = output_folder,
+    filename = paste0("large_", wt_name, "_wts.csv")
+  )
+  
+  message(paste(name, " weight finished:", 
+                paste(years, collapse = ", ")))
+  
+  invisible(result)
+  
+}
