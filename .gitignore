@@ -9,6 +9,7 @@
  
 # Except config_example
 !config_example
+!create_calibration_totals
 
 # 'data' folder #
 data/
