@@ -3,7 +3,7 @@ Reproducible Analytical Pipeline (RAP) for the creation of multiyear weights for
 
 ## Running the RAP
 
-The only file that needs to be updated before running the shes_multiyear_weighting RAP is the config.R file. An example of this file with placeholder values can be found in the `scripts` folder.
+The only file that needs to be updated before running the shes_multiyear_weighting RAP is the config.R file. An example of this file with placeholder values is available.
 
 To create multiyear weights, run the `shes_multiyear_weighting.R` script. This file sources all required scripts and executes them.
 
